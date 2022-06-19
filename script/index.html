@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+.myAlgobutton {
+  border: 2px solid #000088;
+  background-color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+  border-radius: 12px;
+}
+
+.myAlgobutton:hover {
+  background-color: #000088;
+  color: white;
+}
+
+
+button {
+  border: 2px solid #800080;
+  background-color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+  border-radius: 12px;
+}
+
+button:hover {
+  background-color: #800080;
+  color: white;
+}
+
+.message {
+  border-radius: 25px;
+  background: white;
+  padding: 10px;
+  margin: 15px;
+}
+
+h1 {
+    display:table;
+    width:100%;
+}
+
+/* The Modal (background) */
+.modal {
+  display: none; /* Hidden by default */
+  position: fixed; /* Stay in place */
+  z-index: 1; /* Sit on top */
+  left: 0;
+  top: 0;
+  width: 100%; /* Full width */
+  height: 100%; /* Full height */
+  overflow: auto; /* Enable scroll if needed */
+  background-color: rgb(0,0,0); /* Fallback color */
+  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+/* Modal Content/Box */
+.modal-content {
+  background-color: #fefefe;
+  margin: 15% auto; /* 15% from the top and centered */
+  padding: 20px;
+  border: 1px solid #888;
+  width: 80%; /* Could be more or less, depending on screen size */
+}
+
+/* The Close Button */
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+</style>
+  <script src="./myalgo.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+<script
+  src="https://cdn.jsdelivr.net/npm/algosdk@v1.17.0/dist/browser/algosdk.min.js"
+  integrity="sha384-a9B05lyY5P6hDuZRdqWCEOD7xn/qAY8gc4B5/SJwy+t8GcUlwpzJ25qHcYwxi1NX"
+  crossorigin="anonymous"
+></script>
+</head>
+<body bgcolor="#F6CEFC">
+	<center>
+		<h1><img src="logo.png" width=35 height=35/> AKTA BARK OF FAME</h1>
+	</center>
+<center><button id="myBtn">How to Send Message?</button>
+<button class="myAlgobutton" onClick="javascript:connectToMyAlgo();">Use My Algo Wallet</button></center><br>
+<span style='float:right;'>Order by <select id='ordering' onChange="javascript:getBarks();"><option>date</option><option>amount</option></select></span><br>
+<span id=messages></span>
+
+<!-- The Modal -->
+<div id="myModal" class="modal">
+
+  <!-- Modal content -->
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <p>Do the following if you want to display some message here:<Br>1. Send some AKTA to address 4QSPOUGEJ73ZZQ65NFMBSH2W4WTDGJYLQDVMFG55YQBI2HYRHZLOFCZKEA<Br>2.Add note begins with "Bark of Fame"<Br>3. The note will be displayed here</p>
+  </div>
+
+</div>
+
+<div id="TransactionModal" class="modal">
+
+  <!-- Modal content -->
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <p>Amount:<input id="amount" type="number" style='width: 100%'></input>Note:<input id="note" style='width: 100%'></input><button class="myAlgobutton" onClick="javascript:sendTransaction();">Send Transaction</button></p>
+  </div>
+
+</div>
+<script>
+const myAlgoWallet = new MyAlgoConnect();
+var address;
+async function connectToMyAlgo() {
+  try {
+    const accounts = await myAlgoWallet.connect();
+    const addresses = accounts.map(account => account.address);
+    address = addresses[0];
+    document.getElementById("TransactionModal").style.display = "block";
+  } catch (err) {
+    alert(err);
+  }
+}
+
+async function sendTransaction()
+{
+  try {
+    var textMessage = document.getElementById("note").value;
+    if(!textMessage.toLowerCase().startsWith("bark of fame"))
+    {
+	textMessage = "bark of fame" + textMessage;
+    }
+
+    const algodClient = new algosdk.Algodv2("",'https://node.algoexplorerapi.io', '');
+    const params = await algodClient.getTransactionParams().do();
+
+    const txn = algosdk.makeAssetTransferTxnWithSuggestedParamsFromObject({
+    suggestedParams: {
+        ...params,
+    },
+    from: address,
+    to: '4QSPOUGEJ73ZZQ65NFMBSH2W4WTDGJYLQDVMFG55YQBI2HYRHZLOFCZKEA',
+    assetIndex: 523683256,
+    amount: document.getElementById("amount").value * 1000000,
+    note: new TextEncoder("utf-8").encode(textMessage)
+    });
+
+    const myAlgoConnect = new MyAlgoConnect();
+    const signedTxn = await myAlgoConnect.signTransaction(txn.toByte());
+    const response = await algodClient.sendRawTransaction(signedTxn.blob).do();
+    console.log(response)
+
+    document.getElementById("TransactionModal").style.display = "none";
+    getBarks();
+  } catch (err) {
+    alert(err);
+  }
+}
+
+// Get the modal
+var modal = document.getElementById("myModal");
+var transactionModal = document.getElementById("TransactionModal");
+var btn = document.getElementById("myBtn");
+var span = document.getElementsByClassName("close");
+
+// When the user clicks on the button, open the modal
+btn.onclick = function() {
+  modal.style.display = "block";
+}
+
+for(var i = 0; i < span.length; i++)
+{
+	span[i].onclick = function() {
+  		modal.style.display = "none";
+ 		transactionModal.style.display = "none";
+	}
+}
+
+// When the user clicks anywhere outside of the modal, close it
+window.onclick = function(event) {
+  if (event.target == modal) {
+    modal.style.display = "none";
+  }
+  if (event.target == transactionModal) {
+    transactionModal.style.display = "none";
+  }
+}
+
+
+function getBarks()
+{
+	var select = document.getElementById('ordering');
+	var value = select.options[select.selectedIndex].value;
+	var postFix = "";
+	if(value == "amount")
+	{
+		postFix = "?amount=";
+	}
+
+  $.getJSON('https://irottkor.hu/bof/provider.php' + postFix, function(data) {
+	document.getElementById('messages').innerHTML = '';
+	for(var i =0; i < data.length; i++)
+	{ 
+        	document.getElementById('messages').innerHTML += '<div class=message><p style="text-align:left;">' + data[i].key +  '<span style="float:right;">' + data[i].date +  '</span></p>' + data[i].message.substring(12) + '<span style="float:right;"><img src="logo.png" width=15 height=15/> ' + data[i].amount +  '</span></div>';
+	}
+    });
+}
+getBarks();
+</script>
+
+</body>
+</html>
